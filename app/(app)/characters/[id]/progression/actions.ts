@@ -2,21 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
-import { recomputeCharacterLevel } from "@/lib/domain/dp-budget";
-import type { LevelTier } from "@/lib/domain/progression";
+import { loadLevelTiers, recomputeCharacterLevel } from "@/lib/domain/dp-budget";
 import { createClient } from "@/lib/supabase/server";
-
-async function loadTiers(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data } = await supabase
-    .from("level_progression")
-    .select("level, min_total_dp, max_total_dp");
-  const tiers: LevelTier[] = (data ?? []).map((t) => ({
-    level: t.level,
-    min_total_dp: t.min_total_dp,
-    max_total_dp: t.max_total_dp ?? Number.MAX_SAFE_INTEGER,
-  }));
-  return tiers;
-}
 
 export async function grantDpAction(input: {
   characterId: string;
@@ -36,7 +23,7 @@ export async function grantDpAction(input: {
   });
   if (error) return { ok: false, error: error.message };
 
-  const tiers = await loadTiers(supabase);
+  const tiers = await loadLevelTiers(supabase);
   await recomputeCharacterLevel(supabase, input.characterId, tiers);
   revalidatePath(`/characters/${input.characterId}`, "layout");
   return { ok: true };
@@ -54,7 +41,7 @@ export async function deleteDpSessionAction(input: {
     .eq("character_id", input.characterId);
   if (error) return { ok: false, error: error.message };
 
-  const tiers = await loadTiers(supabase);
+  const tiers = await loadLevelTiers(supabase);
   await recomputeCharacterLevel(supabase, input.characterId, tiers);
   revalidatePath(`/characters/${input.characterId}`, "layout");
   return { ok: true };

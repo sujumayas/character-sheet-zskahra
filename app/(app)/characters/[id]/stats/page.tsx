@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { loadCharacterAdolescentGrants } from "@/lib/data/character-adolescent-grants";
 import { loadCharacterTalentBonuses } from "@/lib/data/character-talent-bonuses";
+import { aggregateCharacterDp, loadLevelTiers } from "@/lib/domain/dp-budget";
 import { createClient } from "@/lib/supabase/server";
 
 import { StatsEditor } from "./stats-editor";
@@ -178,6 +179,15 @@ export default async function StatsPage({
     "max_weight_kg",
   );
 
+  // Decide whether the "Receive initial L1 DPs" CTA should appear. A
+  // character is "fresh" when nothing has been granted and nothing has been
+  // spent — guards against re-granting after a player deletes the L1 ledger
+  // row but has already touched categories/skills/talents.
+  const tiers = await loadLevelTiers(supabase);
+  const budget = await aggregateCharacterDp(supabase, id, tiers);
+  const isFreshCharacter =
+    budget.rawSessionsTotal === 0 && budget.totalSpent === 0;
+
   return (
     <StatsEditor
       characterId={id}
@@ -204,6 +214,7 @@ export default async function StatsPage({
       ageRange={ageRange}
       heightRange={heightRange}
       weightRange={weightRange}
+      isFreshCharacter={isFreshCharacter}
     />
   );
 }

@@ -3,6 +3,12 @@
 
 export const PROFESSION_ADAPTABILITY_BONUS = 15;
 
+// Flat L1 starting DP grant. Mirrors the source spreadsheet's
+// `'Level Progression'!C2 = 70*2 + if(PA, 15, 0)` — the 70*2 baseline. The
+// PA +15 is layered on at read time via PROFESSION_ADAPTABILITY_BONUS, so the
+// ledger row written for the initial grant is exactly INITIAL_L1_DP.
+export const INITIAL_L1_DP = 140;
+
 export interface LevelTier {
   level: number;
   min_total_dp: number;

@@ -13,6 +13,19 @@ import {
   type LevelTier,
 } from "./progression";
 
+export async function loadLevelTiers(
+  supabase: SupabaseClient,
+): Promise<LevelTier[]> {
+  const { data } = await supabase
+    .from("level_progression")
+    .select("level, min_total_dp, max_total_dp");
+  return (data ?? []).map((t) => ({
+    level: t.level,
+    min_total_dp: t.min_total_dp,
+    max_total_dp: t.max_total_dp ?? Number.MAX_SAFE_INTEGER,
+  }));
+}
+
 export interface DpBucketTotals {
   categories: number;
   skills: number;

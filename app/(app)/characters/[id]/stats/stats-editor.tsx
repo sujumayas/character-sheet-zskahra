@@ -17,6 +17,8 @@ import {
 import { computeStatRow, computeTraitRow } from "@/lib/domain/modifiers";
 import { createClient } from "@/lib/supabase/client";
 
+import { InitialDpGrantCard } from "./initial-dp-grant-card";
+
 const STAT_DISPLAY_ORDER = [
   "ST",
   "CO",
@@ -152,6 +154,7 @@ export interface StatsEditorProps {
   ageRange: { min: number; max: number } | null;
   heightRange: { min: number; max: number } | null;
   weightRange: { min: number; max: number } | null;
+  isFreshCharacter: boolean;
 }
 
 function indexBy<K extends keyof Modifier>(
@@ -353,6 +356,23 @@ export function StatsEditor(props: StatsEditorProps) {
       ? description.appearance_roll + presenceTotal
       : null;
 
+  // Live "are all 8 stats filled?" — recomputes as the user edits stat
+  // percentiles in this session, so the L1 grant CTA flips from checklist
+  // mode to button mode without a server round-trip.
+  const initialDpStatStatuses = useMemo(
+    () =>
+      STAT_DISPLAY_ORDER.map((code) => {
+        const stat = statByCode.get(code);
+        const cs = stat ? characterStatById.get(stat.id) : undefined;
+        const value = cs?.base_value;
+        return {
+          code,
+          filled: typeof value === "number" && value > 0,
+        };
+      }),
+    [statByCode, characterStatById],
+  );
+
   // ----- mutations -----
 
   async function updateCharacter(patch: Partial<CharacterRow>) {
@@ -460,6 +480,13 @@ export function StatsEditor(props: StatsEditorProps) {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-6 py-8">
+      {props.isFreshCharacter && (
+        <InitialDpGrantCard
+          characterId={props.characterId}
+          hasProfessionAdaptability={character.has_profession_adaptability}
+          statStatuses={initialDpStatStatuses}
+        />
+      )}
       <IdentityCard
         character={character}
         description={description}

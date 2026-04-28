@@ -115,6 +115,8 @@ export interface SkillsEditorProps {
   levelProgression: LevelTier[];
   talentStatBonuses: ReadonlyArray<readonly [string, number]>;
   talentSkillBonuses: ReadonlyArray<readonly [string, number]>;
+  adolescentSkillGrants: ReadonlyArray<readonly [string, number]>;
+  adolescentCategoryGrants: ReadonlyArray<readonly [string, number]>;
 }
 
 function indexBy(rows: ModifierRow[]): Map<string, number> {
@@ -179,6 +181,14 @@ export function SkillsEditor(props: SkillsEditorProps) {
     () => new Map(props.talentSkillBonuses),
     [props.talentSkillBonuses],
   );
+  const adolescentSkillRanksById = useMemo(
+    () => new Map(props.adolescentSkillGrants),
+    [props.adolescentSkillGrants],
+  );
+  const adolescentCategoryRanksById = useMemo(
+    () => new Map(props.adolescentCategoryGrants),
+    [props.adolescentCategoryGrants],
+  );
 
   const statTotalAndCost = useMemo(() => {
     const totals = new Map<string, { total: number; cost_basis: number }>();
@@ -214,9 +224,9 @@ export function SkillsEditor(props: SkillsEditorProps) {
   // bonuses keyed on the category rather than the skill).
   function categoryBonusForCategory(categoryId: string | null): number {
     if (!categoryId) return 0;
-    const cc = characterCategoryById.get(categoryId);
-    if (!cc) return 0;
-    return ranksValueSkill(cc.ranks);
+    const playerRanks = characterCategoryById.get(categoryId)?.ranks ?? 0;
+    const adolRanks = adolescentCategoryRanksById.get(categoryId) ?? 0;
+    return ranksValueSkill(playerRanks + adolRanks);
   }
 
   // DP available
@@ -282,12 +292,15 @@ export function SkillsEditor(props: SkillsEditorProps) {
     const set = new Set<string>();
     for (const g of grouped) {
       const hasRanks = g.skills.some(
-        (s) => (rowBySkillId.get(s.id)?.ranks ?? 0) > 0,
+        (s) =>
+          (rowBySkillId.get(s.id)?.ranks ?? 0) +
+            (adolescentSkillRanksById.get(s.id) ?? 0) >
+          0,
       );
       if (hasRanks) set.add(g.id);
     }
     return set;
-  }, [grouped, rowBySkillId]);
+  }, [grouped, rowBySkillId, adolescentSkillRanksById]);
 
   const [expanded, setExpanded] = useState<Set<string>>(initiallyExpanded);
   function toggleGroup(id: string) {
@@ -503,7 +516,9 @@ export function SkillsEditor(props: SkillsEditorProps) {
                       const r = rowBySkillId.get(sk.id);
                       const stat = sk.stat_id ? statById.get(sk.stat_id) : null;
                       const cost = costForStat(sk.stat_id);
-                      const ranks = r?.ranks ?? 0;
+                      const playerRanks = r?.ranks ?? 0;
+                      const adolRanks = adolescentSkillRanksById.get(sk.id) ?? 0;
+                      const ranks = playerRanks + adolRanks;
                       const computed = computeSkillLikeRow({
                         ranks,
                         stat_value: statValueForStat(sk.stat_id),
@@ -523,6 +538,14 @@ export function SkillsEditor(props: SkillsEditorProps) {
                                 Custom
                               </span>
                             )}
+                            {adolRanks > 0 && (
+                              <span
+                                title="Free adolescent ranks from your birthplace"
+                                className="ml-2 rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700"
+                              >
+                                +{adolRanks} adol
+                              </span>
+                            )}
                           </td>
                           <td className="px-3 py-2 text-zinc-500">
                             {stat?.code ?? "—"}
@@ -533,7 +556,7 @@ export function SkillsEditor(props: SkillsEditorProps) {
                           <td className="px-3 py-2 text-right">
                             <NumberStepper
                               className="justify-end"
-                              value={ranks}
+                              value={playerRanks}
                               min={0}
                               max={50}
                               onCommit={(next) => commitSkillRanks(sk, next)}
@@ -568,7 +591,7 @@ export function SkillsEditor(props: SkillsEditorProps) {
                             {computed.total}
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums text-zinc-600">
-                            {ranks * cost}
+                            {playerRanks * cost}
                           </td>
                         </tr>
                       );

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { loadCharacterAdolescentGrants } from "@/lib/data/character-adolescent-grants";
 import { loadCharacterTalentBonuses } from "@/lib/data/character-talent-bonuses";
 import { createClient } from "@/lib/supabase/server";
 
@@ -59,22 +60,27 @@ export default async function CategoriesPage({
   const raceId = description?.race_id ?? null;
   const birthplaceId = description?.birthplace_id ?? null;
 
-  const [{ data: raceStatMods }, { data: bpStatMods }, talentBonuses] =
-    await Promise.all([
-      raceId
-        ? supabase
-            .from("race_stat_modifiers")
-            .select("stat_id, modifier_value")
-            .eq("race_id", raceId)
-        : Promise.resolve({ data: [] }),
-      birthplaceId
-        ? supabase
-            .from("birthplace_stat_modifiers")
-            .select("stat_id, modifier_value")
-            .eq("birthplace_id", birthplaceId)
-        : Promise.resolve({ data: [] }),
-      loadCharacterTalentBonuses(supabase, id),
-    ]);
+  const [
+    { data: raceStatMods },
+    { data: bpStatMods },
+    talentBonuses,
+    adolescentGrants,
+  ] = await Promise.all([
+    raceId
+      ? supabase
+          .from("race_stat_modifiers")
+          .select("stat_id, modifier_value")
+          .eq("race_id", raceId)
+      : Promise.resolve({ data: [] }),
+    birthplaceId
+      ? supabase
+          .from("birthplace_stat_modifiers")
+          .select("stat_id, modifier_value")
+          .eq("birthplace_id", birthplaceId)
+      : Promise.resolve({ data: [] }),
+    loadCharacterTalentBonuses(supabase, id),
+    loadCharacterAdolescentGrants(supabase, id),
+  ]);
 
   return (
     <CategoriesEditor
@@ -90,6 +96,7 @@ export default async function CategoriesPage({
       levelProgression={levelProgression ?? []}
       talentStatBonuses={Array.from(talentBonuses.stat.entries())}
       talentCategoryBonuses={Array.from(talentBonuses.category.entries())}
+      adolescentCategoryGrants={Array.from(adolescentGrants.category.entries())}
     />
   );
 }

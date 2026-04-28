@@ -147,6 +147,7 @@ export interface StatsEditorProps {
   statProgression: StatProgressionEntry[];
   talentStatBonuses: ReadonlyArray<readonly [string, number]>;
   talentTraitBonuses: ReadonlyArray<readonly [string, number]>;
+  adolescentTraitGrants: ReadonlyArray<readonly [string, number]>;
 }
 
 function indexBy<K extends keyof Modifier>(
@@ -273,6 +274,10 @@ export function StatsEditor(props: StatsEditorProps) {
     () => new Map(props.talentTraitBonuses),
     [props.talentTraitBonuses],
   );
+  const adolescentTraitRanksById = useMemo(
+    () => new Map(props.adolescentTraitGrants),
+    [props.adolescentTraitGrants],
+  );
 
   const computedStatRows = useMemo(
     () =>
@@ -304,9 +309,11 @@ export function StatsEditor(props: StatsEditorProps) {
         const trait = traitByName.get(traitName);
         if (!trait) return null;
         const ct = characterTraitById.get(trait.id);
+        const playerRanks = ct?.ranks ?? 0;
+        const adolRanks = adolescentTraitRanksById.get(trait.id) ?? 0;
         const row = computeTraitRow({
           trait_id: trait.id,
-          ranks: ct?.ranks ?? 0,
+          ranks: playerRanks + adolRanks,
           primary_stat_total: trait.primary_stat_id
             ? statTotalById.get(trait.primary_stat_id) ?? 0
             : 0,
@@ -322,7 +329,7 @@ export function StatsEditor(props: StatsEditorProps) {
           gm_bonus: ct?.gm_bonus ?? 0,
           temp_modifier: ct?.temp_modifier ?? 0,
         });
-        return { trait, row, character_trait: ct };
+        return { trait, row, character_trait: ct, adolescent_ranks: adolRanks };
       }).filter((entry) => entry !== null),
     [
       traitByName,
@@ -331,6 +338,7 @@ export function StatsEditor(props: StatsEditorProps) {
       bpTraitById,
       statTotalById,
       talentTraitBonusById,
+      adolescentTraitRanksById,
     ],
   );
 
@@ -555,9 +563,19 @@ export function StatsEditor(props: StatsEditorProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
-              {computedTraitRows.map(({ trait, row, character_trait }) => (
+              {computedTraitRows.map(({ trait, row, character_trait, adolescent_ranks }) => (
                 <tr key={trait.id}>
-                  <td className="px-3 py-2 font-medium">{trait.name}</td>
+                  <td className="px-3 py-2 font-medium">
+                    {trait.name}
+                    {adolescent_ranks > 0 && (
+                      <span
+                        title="Free adolescent ranks from your birthplace"
+                        className="ml-2 rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700"
+                      >
+                        +{adolescent_ranks} adol
+                      </span>
+                    )}
+                  </td>
                   <td className="px-3 py-2 text-right tabular-nums text-zinc-600">
                     {signed(row.race_modifier)}
                   </td>
@@ -677,14 +695,24 @@ function IdentityCard({
         </FieldEditor>
 
         <FieldEditor label="Race">
-          <NullableSelect
-            value={description.race_id}
-            options={races}
-            placeholder="Select race"
-            onChange={(id) =>
-              onUpdateDescription({ race_id: id, sex_id: null })
-            }
-          />
+          <div className="flex flex-col gap-1">
+            <NullableSelect
+              value={description.race_id}
+              options={races}
+              placeholder="Select race"
+              onChange={(id) =>
+                onUpdateDescription({ race_id: id, sex_id: null })
+              }
+            />
+            {description.race_id && (
+              <span
+                title="race_adolescent_rank_rules has no data yet (plan §10)"
+                className="text-xs text-amber-700"
+              >
+                Race adolescent grants: TBD (not yet seeded)
+              </span>
+            )}
+          </div>
         </FieldEditor>
         <FieldEditor label="Profession">
           <NullableSelect

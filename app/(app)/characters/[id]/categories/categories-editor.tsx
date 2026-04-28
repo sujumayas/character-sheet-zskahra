@@ -73,6 +73,7 @@ export interface CategoriesEditorProps {
   levelProgression: LevelTier[];
   talentStatBonuses: ReadonlyArray<readonly [string, number]>;
   talentCategoryBonuses: ReadonlyArray<readonly [string, number]>;
+  adolescentCategoryGrants: ReadonlyArray<readonly [string, number]>;
 }
 
 function indexBy(rows: ModifierRow[]): Map<string, number> {
@@ -127,6 +128,10 @@ export function CategoriesEditor(props: CategoriesEditorProps) {
   const talentCategoryBonusById = useMemo(
     () => new Map(props.talentCategoryBonuses),
     [props.talentCategoryBonuses],
+  );
+  const adolescentRanksById = useMemo(
+    () => new Map(props.adolescentCategoryGrants),
+    [props.adolescentCategoryGrants],
   );
 
   // Stat totals (for stat_value contribution) and cost-bases (for DP cost lookup).
@@ -365,7 +370,11 @@ export function CategoriesEditor(props: CategoriesEditorProps) {
                   const row = rowByCategoryId.get(cat.id);
                   const stat = cat.stat_id ? statById.get(cat.stat_id) : null;
                   const cost = costForStat(cat.stat_id);
-                  const ranks = row?.ranks ?? 0;
+                  const playerRanks = row?.ranks ?? 0;
+                  const adolRanks = adolescentRanksById.get(cat.id) ?? 0;
+                  // Adolescent grants stack on top of paid ranks, are free
+                  // (no DP), and ride the same piecewise rank curve.
+                  const ranks = playerRanks + adolRanks;
                   const computed = computeSkillLikeRow({
                     ranks,
                     stat_value: statValueForStat(cat.stat_id),
@@ -377,7 +386,17 @@ export function CategoriesEditor(props: CategoriesEditorProps) {
                   });
                   return (
                     <tr key={cat.id}>
-                      <td className="px-3 py-2 font-medium">{cat.name}</td>
+                      <td className="px-3 py-2 font-medium">
+                        {cat.name}
+                        {adolRanks > 0 && (
+                          <span
+                            title={`Free adolescent ranks from your birthplace`}
+                            className="ml-2 rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700"
+                          >
+                            +{adolRanks} adol
+                          </span>
+                        )}
+                      </td>
                       <td className="px-3 py-2 text-zinc-500">
                         {stat?.code ?? "—"}
                       </td>
@@ -387,7 +406,7 @@ export function CategoriesEditor(props: CategoriesEditorProps) {
                       <td className="px-3 py-2 text-right">
                         <NumberStepper
                           className="justify-end"
-                          value={ranks}
+                          value={playerRanks}
                           min={0}
                           max={50}
                           onCommit={(next) => commitCategoryRanks(cat, next)}
@@ -428,7 +447,7 @@ export function CategoriesEditor(props: CategoriesEditorProps) {
                         {computed.total}
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums text-zinc-600">
-                        {ranks * cost}
+                        {playerRanks * cost}
                       </td>
                     </tr>
                   );

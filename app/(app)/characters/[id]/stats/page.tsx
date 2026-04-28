@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { loadCharacterAdolescentGrants } from "@/lib/data/character-adolescent-grants";
 import { loadCharacterTalentBonuses } from "@/lib/data/character-talent-bonuses";
 import { createClient } from "@/lib/supabase/server";
 
@@ -87,6 +88,7 @@ export default async function StatsPage({
     { data: bpTraitMods },
     { data: raceSexes },
     talentBonuses,
+    adolescentGrants,
   ] = await Promise.all([
     raceId
       ? supabase
@@ -120,6 +122,7 @@ export default async function StatsPage({
           .order("name")
       : Promise.resolve({ data: [] }),
     loadCharacterTalentBonuses(supabase, id),
+    loadCharacterAdolescentGrants(supabase, id),
   ]);
 
   return (
@@ -144,6 +147,7 @@ export default async function StatsPage({
       statProgression={statProgression ?? []}
       talentStatBonuses={Array.from(talentBonuses.stat.entries())}
       talentTraitBonuses={Array.from(talentBonuses.trait.entries())}
+      adolescentTraitGrants={Array.from(adolescentGrants.trait.entries())}
     />
   );
 }

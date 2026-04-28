@@ -105,6 +105,13 @@ export interface WeaponsEditorProps {
   levelProgression: LevelTier[];
   talentStatBonuses: ReadonlyArray<readonly [string, number]>;
   talentWeaponBonuses: ReadonlyArray<readonly [string, number]>;
+  adolescentCategoryGrants: ReadonlyArray<readonly [string, number]>;
+  adolescentWeaponPoolRanks: number;
+  adolescentWeaponPoolBreakdown: ReadonlyArray<{
+    slot: 1 | 2;
+    ranks: number;
+    notes: string | null;
+  }>;
 }
 
 function indexBy(rows: ModifierRow[]): Map<string, number> {
@@ -174,6 +181,10 @@ export function WeaponsEditor(props: WeaponsEditorProps) {
     () => new Map(props.talentWeaponBonuses),
     [props.talentWeaponBonuses],
   );
+  const adolescentCategoryRanksById = useMemo(
+    () => new Map(props.adolescentCategoryGrants),
+    [props.adolescentCategoryGrants],
+  );
 
   const statTotalAndCost = useMemo(() => {
     const totals = new Map<string, { total: number; cost_basis: number }>();
@@ -204,9 +215,9 @@ export function WeaponsEditor(props: WeaponsEditorProps) {
 
   function categoryBonusForCategory(categoryId: string | null): number {
     if (!categoryId) return 0;
-    const cc = characterCategoryById.get(categoryId);
-    if (!cc) return 0;
-    return ranksValueSkill(cc.ranks);
+    const playerRanks = characterCategoryById.get(categoryId)?.ranks ?? 0;
+    const adolRanks = adolescentCategoryRanksById.get(categoryId) ?? 0;
+    return ranksValueSkill(playerRanks + adolRanks);
   }
 
   // Per-weapon natural value, plus computed transfer values across the
@@ -294,6 +305,15 @@ export function WeaponsEditor(props: WeaponsEditorProps) {
     }
     return total;
   }, [props.weapons, rowByWeaponId, statTotalAndCost, props.statCostRules]);
+
+  // Free weapon-rank pool from birthplace (Weapon 1 + Weapon 2 grants).
+  const adolPoolAllocated = useMemo(() => {
+    let total = 0;
+    for (const r of rows) total += r.adolescent_ranks ?? 0;
+    return total;
+  }, [rows]);
+  const adolPoolRemaining =
+    props.adolescentWeaponPoolRanks - adolPoolAllocated;
 
   const groupedWeapons = useMemo(() => {
     const buckets = new Map<string, WeaponLookup[]>();
@@ -455,6 +475,41 @@ export function WeaponsEditor(props: WeaponsEditorProps) {
         available={dpAvailable}
       />
 
+      {props.adolescentWeaponPoolRanks > 0 && (
+        <div className="rounded-md border border-emerald-200 bg-emerald-50/50 px-4 py-3 text-sm">
+          <div className="flex items-baseline justify-between">
+            <span className="font-medium text-emerald-900">
+              Birthplace weapon picks
+            </span>
+            <span
+              className={`tabular-nums ${
+                adolPoolRemaining < 0
+                  ? "font-semibold text-red-700"
+                  : adolPoolRemaining === 0
+                    ? "text-emerald-800"
+                    : "text-emerald-900"
+              }`}
+            >
+              {adolPoolAllocated} / {props.adolescentWeaponPoolRanks} allocated
+              {adolPoolRemaining > 0
+                ? ` (${adolPoolRemaining} remaining)`
+                : adolPoolRemaining < 0
+                  ? ` (over by ${-adolPoolRemaining})`
+                  : ""}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-emerald-700">
+            {props.adolescentWeaponPoolBreakdown
+              .map(
+                (b) =>
+                  `Weapon ${b.slot}: ${b.ranks} rank${b.ranks === 1 ? "" : "s"}`,
+              )
+              .join(" · ")}
+            . Allocate via the Adol column on any weapon below — they cost no DP.
+          </p>
+        </div>
+      )}
+
       {groupedWeapons.map((group) => (
         <section key={group.id}>
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-600">
@@ -515,10 +570,26 @@ export function WeaponsEditor(props: WeaponsEditorProps) {
                           onCommit={(next) => commitWeaponRanks(w, next)}
                         />
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums text-zinc-500">
-                        {n.adolescent_ranks + n.package_ranks > 0
-                          ? `+${n.adolescent_ranks + n.package_ranks}`
-                          : "—"}
+                      <td className="px-3 py-2 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <EditableNumber
+                            className="w-12"
+                            value={n.adolescent_ranks}
+                            min={0}
+                            max={50}
+                            onCommit={(next) =>
+                              commitWeaponField(w, { adolescent_ranks: next })
+                            }
+                          />
+                          {n.package_ranks > 0 && (
+                            <span
+                              title="Granted by training package"
+                              className="rounded bg-zinc-100 px-1 py-0.5 text-xs tabular-nums text-zinc-600"
+                            >
+                              +{n.package_ranks}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums text-zinc-600">
                         {n.cat}

@@ -617,6 +617,7 @@ export type Database = {
           gm_bonus: number | null
           id: string
           notes: string | null
+          ranks: number
           special_modifier: number | null
           special_notes: string | null
           talent_bonus: number | null
@@ -631,6 +632,7 @@ export type Database = {
           gm_bonus?: number | null
           id?: string
           notes?: string | null
+          ranks?: number
           special_modifier?: number | null
           special_notes?: string | null
           talent_bonus?: number | null
@@ -645,6 +647,7 @@ export type Database = {
           gm_bonus?: number | null
           id?: string
           notes?: string | null
+          ranks?: number
           special_modifier?: number | null
           special_notes?: string | null
           talent_bonus?: number | null
@@ -1654,6 +1657,7 @@ export type Database = {
           character_id: string
           created_at: string | null
           id: string
+          is_active: boolean
           notes: string | null
           talent_id: string
           times_taken: number
@@ -1664,6 +1668,7 @@ export type Database = {
           character_id: string
           created_at?: string | null
           id?: string
+          is_active?: boolean
           notes?: string | null
           talent_id: string
           times_taken?: number
@@ -1674,6 +1679,7 @@ export type Database = {
           character_id?: string
           created_at?: string | null
           id?: string
+          is_active?: boolean
           notes?: string | null
           talent_id?: string
           times_taken?: number

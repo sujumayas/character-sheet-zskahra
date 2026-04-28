@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CharactersPage() {
@@ -22,21 +24,26 @@ export default async function CharactersPage() {
       {!error && (!characters || characters.length === 0) && (
         <div className="rounded-md border border-dashed border-zinc-300 p-8 text-center">
           <p className="text-sm text-zinc-500">
-            No characters yet. Creation lands in Phase 1.
+            No characters yet. The seed character lands at the end of Phase 1.
           </p>
         </div>
       )}
 
       {characters && characters.length > 0 && (
-        <ul className="divide-y divide-zinc-200 rounded-md border border-zinc-200">
+        <ul className="divide-y divide-zinc-200 rounded-md border border-zinc-200 bg-white">
           {characters.map((character) => (
-            <li key={character.id} className="px-4 py-3 text-sm">
-              <span className="font-medium">
-                {character.character_name ?? character.name}
-              </span>
-              {character.level != null && (
-                <span className="ml-2 text-zinc-500">L{character.level}</span>
-              )}
+            <li key={character.id}>
+              <Link
+                href={`/characters/${character.id}/stats`}
+                className="flex items-center justify-between px-4 py-3 text-sm hover:bg-zinc-50"
+              >
+                <span className="font-medium">
+                  {character.character_name ?? character.name}
+                </span>
+                <span className="text-zinc-500">
+                  {character.level != null ? `L${character.level}` : "—"}
+                </span>
+              </Link>
             </li>
           ))}
         </ul>

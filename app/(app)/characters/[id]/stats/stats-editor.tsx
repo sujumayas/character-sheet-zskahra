@@ -472,7 +472,7 @@ export function StatsEditor(props: StatsEditorProps) {
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-600">
           Stats
         </h2>
-        <div className="overflow-hidden rounded-md border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500">
               <tr>
@@ -548,7 +548,7 @@ export function StatsEditor(props: StatsEditorProps) {
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-600">
           Traits
         </h2>
-        <div className="overflow-hidden rounded-md border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500">
               <tr>
@@ -632,7 +632,7 @@ export function StatsEditor(props: StatsEditorProps) {
         </div>
       </section>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <ChaosCard chaos={chaos} onUpdate={updateChaos} />
         <LifePointsCard lifePoints={lifePoints} onUpdate={updateLifePoints} />
       </div>
@@ -666,7 +666,7 @@ function IdentityCard({
       <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
         Identity
       </h2>
-      <div className="mt-3 grid gap-x-4 gap-y-3 text-sm md:grid-cols-3">
+      <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-3 text-sm sm:grid-cols-2 md:grid-cols-3">
         <FieldEditor label="Character name">
           <EditableText
             value={character.character_name ?? character.name}
@@ -816,7 +816,7 @@ function ChaosCard({
       <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
         Chaos
       </h2>
-      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+      <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-3 text-sm sm:grid-cols-2">
         <FieldEditor label="Index">
           <EditableNumber
             value={chaos.chaos_index}
@@ -862,7 +862,7 @@ function LifePointsCard({
       <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
         Life Points
       </h2>
-      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+      <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-3 text-sm sm:grid-cols-2">
         <FieldEditor label="Current">
           <EditableNumber
             value={lifePoints.current_life_points}

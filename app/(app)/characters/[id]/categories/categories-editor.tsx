@@ -348,7 +348,7 @@ export function CategoriesEditor(props: CategoriesEditorProps) {
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-600">
             {group}
           </h2>
-          <div className="overflow-hidden rounded-md border border-zinc-200 bg-white">
+          <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">
             <table className="w-full text-sm">
               <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500">
                 <tr>

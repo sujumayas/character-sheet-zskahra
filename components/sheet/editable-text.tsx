@@ -37,7 +37,7 @@ export function EditableText({
   return (
     <Input
       type="text"
-      className={cn("h-7", className)}
+      className={cn("h-9", className)}
       value={draft}
       placeholder={placeholder}
       disabled={disabled}

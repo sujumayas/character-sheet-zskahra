@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      armor_types: {
+        Row: {
+          display_order: number
+          full_armor_bonus: number
+          id: string
+          is_active: boolean
+          max_penalty: number
+          min_penalty: number
+          name: string
+        }
+        Insert: {
+          display_order: number
+          full_armor_bonus: number
+          id?: string
+          is_active?: boolean
+          max_penalty: number
+          min_penalty: number
+          name: string
+        }
+        Update: {
+          display_order?: number
+          full_armor_bonus?: number
+          id?: string
+          is_active?: boolean
+          max_penalty?: number
+          min_penalty?: number
+          name?: string
+        }
+        Relationships: []
+      }
       birthplace_adolescent_rank_rules: {
         Row: {
           birthplace_id: string
@@ -334,6 +364,30 @@ export type Database = {
         }
         Relationships: []
       }
+      body_parts: {
+        Row: {
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          percent_covered: number
+        }
+        Insert: {
+          display_order: number
+          id?: string
+          is_active?: boolean
+          name: string
+          percent_covered: number
+        }
+        Update: {
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          percent_covered?: number
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           category_group: string | null
@@ -607,6 +661,65 @@ export type Database = {
           },
         ]
       }
+      character_armor: {
+        Row: {
+          armor_type_id: string
+          body_part_id: string
+          character_id: string
+          crafting_multiplier: number | null
+          id: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          armor_type_id: string
+          body_part_id: string
+          character_id: string
+          crafting_multiplier?: number | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          armor_type_id?: string
+          body_part_id?: string
+          character_id?: string
+          crafting_multiplier?: number | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_armor_armor_type_id_fkey"
+            columns: ["armor_type_id"]
+            isOneToOne: false
+            referencedRelation: "armor_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_armor_body_part_id_fkey"
+            columns: ["body_part_id"]
+            isOneToOne: false
+            referencedRelation: "body_parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_armor_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "character_traits_total"
+            referencedColumns: ["character_id"]
+          },
+          {
+            foreignKeyName: "character_armor_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       character_categories: {
         Row: {
           activity_modifier: number | null
@@ -759,6 +872,7 @@ export type Database = {
           race_id: string | null
           sex_id: string | null
           updated_at: string | null
+          wear_armor_score: number
           weight_kg: number | null
         }
         Insert: {
@@ -777,6 +891,7 @@ export type Database = {
           race_id?: string | null
           sex_id?: string | null
           updated_at?: string | null
+          wear_armor_score?: number
           weight_kg?: number | null
         }
         Update: {
@@ -795,6 +910,7 @@ export type Database = {
           race_id?: string | null
           sex_id?: string | null
           updated_at?: string | null
+          wear_armor_score?: number
           weight_kg?: number | null
         }
         Relationships: [
@@ -1130,6 +1246,61 @@ export type Database = {
             columns: ["character_id"]
             isOneToOne: true
             referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      character_shield: {
+        Row: {
+          character_id: string
+          hits_used: number
+          id: string
+          is_trained: boolean
+          notes: string | null
+          shield_id: string
+          special_bonus: number
+          updated_at: string
+        }
+        Insert: {
+          character_id: string
+          hits_used?: number
+          id?: string
+          is_trained?: boolean
+          notes?: string | null
+          shield_id: string
+          special_bonus?: number
+          updated_at?: string
+        }
+        Update: {
+          character_id?: string
+          hits_used?: number
+          id?: string
+          is_trained?: boolean
+          notes?: string | null
+          shield_id?: string
+          special_bonus?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_shield_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: true
+            referencedRelation: "character_traits_total"
+            referencedColumns: ["character_id"]
+          },
+          {
+            foreignKeyName: "character_shield_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: true
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_shield_shield_id_fkey"
+            columns: ["shield_id"]
+            isOneToOne: false
+            referencedRelation: "shields"
             referencedColumns: ["id"]
           },
         ]
@@ -2955,6 +3126,48 @@ export type Database = {
           description?: string | null
           id?: number
           name?: string
+        }
+        Relationships: []
+      }
+      shields: {
+        Row: {
+          crit_damage_type: string
+          crit_size_modifier: string
+          display_order: number
+          hits: number | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          trained_db: number
+          untrained_db: number
+          weight_lb: number
+        }
+        Insert: {
+          crit_damage_type: string
+          crit_size_modifier: string
+          display_order: number
+          hits?: number | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          trained_db: number
+          untrained_db: number
+          weight_lb: number
+        }
+        Update: {
+          crit_damage_type?: string
+          crit_size_modifier?: string
+          display_order?: number
+          hits?: number | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          trained_db?: number
+          untrained_db?: number
+          weight_lb?: number
         }
         Relationships: []
       }

@@ -411,7 +411,7 @@ function TalentSection(props: TalentSectionProps) {
           None taken.
         </p>
       ) : (
-        <div className="overflow-hidden rounded-md border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">
           <ul className="divide-y divide-zinc-100">
             {props.characterTalents
               .slice()

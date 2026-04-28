@@ -42,7 +42,7 @@ export function EditableNumber({
     <Input
       type="number"
       inputMode="numeric"
-      className={cn("h-7 text-right tabular-nums", className)}
+      className={cn("h-9 text-right tabular-nums", className)}
       value={draft}
       min={min}
       max={max}

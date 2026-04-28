@@ -10,6 +10,9 @@ const TABS = [
   { slug: "categories", label: "Categories" },
   { slug: "skills", label: "Skills" },
   { slug: "weapons", label: "Weapons" },
+  { slug: "equipment", label: "Equipment" },
+  { slug: "combat", label: "Combat" },
+  { slug: "play", label: "Play" },
   { slug: "talents", label: "Talents" },
   { slug: "progression", label: "Progression" },
 ] as const;

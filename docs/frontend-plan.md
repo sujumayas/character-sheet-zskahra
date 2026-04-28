@@ -470,6 +470,9 @@ Replicates the right-block dashboard from `Level Progression`:
   - `docs/sheet-analysis/Training_Packages.md`
   - `docs/sheet-analysis/Level_Progression.md`
   - `docs/sheet-analysis/Adolescence_ranks.md`
+  - `docs/sheet-analysis/Combat_Dashboard.md`
+  - `docs/sheet-analysis/Playing_Dashboard.md`
+  - `docs/sheet-analysis/Equipment.md`
 - **Source spreadsheet:** `https://docs.google.com/spreadsheets/d/10nV_ow4wQCq-h8-_vWjfYOZM5HbCy4foTWBmloakbJE/`
 - **Supabase project ref:** `lgczxwbkpwhsdhgtgkuo`
 - **Memory files:** `memory/project_overview.md`, `memory/db_schema_shape.md`, `memory/user_preferences.md`

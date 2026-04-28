@@ -494,7 +494,7 @@ export function SkillsEditor(props: SkillsEditorProps) {
               </span>
             </button>
             {isOpen && (
-              <div className="overflow-hidden rounded-md border border-zinc-200 bg-white">
+              <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">
                 <table className="w-full text-sm">
                   <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500">
                     <tr>

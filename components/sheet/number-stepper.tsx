@@ -53,16 +53,16 @@ export function NumberStepper({
         type="button"
         variant="outline"
         size="icon"
-        className="size-6"
+        className="size-8"
         disabled={disabled || draft <= min}
         onClick={() => update(draft - step)}
         aria-label="Decrease"
       >
-        <Minus className="size-3" />
+        <Minus className="size-4" />
       </Button>
       <input
         type="number"
-        className="h-7 w-12 rounded-md border border-input bg-transparent px-1 text-center text-sm tabular-nums focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none disabled:opacity-50"
+        className="h-9 w-12 rounded-md border border-input bg-transparent px-1 text-center text-sm tabular-nums focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none disabled:opacity-50"
         value={draft}
         min={min}
         max={max}
@@ -76,12 +76,12 @@ export function NumberStepper({
         type="button"
         variant="outline"
         size="icon"
-        className="size-6"
+        className="size-8"
         disabled={disabled || draft >= max}
         onClick={() => update(draft + step)}
         aria-label="Increase"
       >
-        <Plus className="size-3" />
+        <Plus className="size-4" />
       </Button>
     </div>
   );

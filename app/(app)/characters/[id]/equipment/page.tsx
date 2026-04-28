@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { loadWearArmorTotal } from "@/lib/data/character-totals";
 import { createClient } from "@/lib/supabase/server";
 
 import { EquipmentEditor } from "./equipment-editor";
@@ -28,7 +29,7 @@ export default async function EquipmentPage({
       .maybeSingle(),
     supabase
       .from("character_description")
-      .select("character_id, wear_armor_score")
+      .select("character_id")
       .eq("character_id", id)
       .maybeSingle(),
     supabase
@@ -63,11 +64,16 @@ export default async function EquipmentPage({
 
   if (!character) notFound();
 
+  // Auto-derived from the "Armor" skill (Athletic Stamina). See
+  // docs/sheet-references/formulas.md and the equivalent compute in
+  // app/(app)/characters/[id]/combat/page.tsx.
+  const wearArmorScore = await loadWearArmorTotal(supabase, id);
+
   return (
     <EquipmentEditor
       characterId={id}
       hasDescriptionRow={description != null}
-      wearArmorScore={description?.wear_armor_score ?? 0}
+      wearArmorScore={wearArmorScore}
       armorTypes={armorTypes ?? []}
       bodyParts={bodyParts ?? []}
       shields={shields ?? []}

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { EditableNumber } from "@/components/sheet/editable-number";
 import { LifePointsPanel } from "@/components/sheet/life-points-panel";
+import { Input } from "@/components/ui/input";
 import type { ActivityModifierRule } from "@/lib/domain/combat";
 import { createClient } from "@/lib/supabase/client";
 
@@ -275,13 +276,52 @@ export function PlayDashboard(props: PlayDashboardProps) {
         </div>
       </div>
 
-      {/* ─── Skill grid ──────────────────────────────────────── */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-600">
+      <SkillGrid skillGroups={props.skillGroups} />
+    </div>
+  );
+}
+
+function SkillGrid({ skillGroups }: { skillGroups: SkillGroup[] }) {
+  const [query, setQuery] = useState("");
+  const trimmed = query.trim().toLowerCase();
+  const filtered = useMemo(() => {
+    if (!trimmed) return skillGroups;
+    return skillGroups
+      .map((g) => {
+        // A category matches if its name matches OR it has matching skills.
+        // When matching by category name, keep all child skills; when
+        // matching by skill, narrow to the matching ones.
+        const groupMatches = g.name.toLowerCase().includes(trimmed);
+        const filteredSkills = groupMatches
+          ? g.skills
+          : g.skills.filter((s) => s.name.toLowerCase().includes(trimmed));
+        if (!groupMatches && filteredSkills.length === 0) return null;
+        return { ...g, skills: filteredSkills };
+      })
+      .filter((g): g is SkillGroup => g !== null);
+  }, [skillGroups, trimmed]);
+
+  return (
+    <section>
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
           Categories &amp; Skills
         </h2>
+        <Input
+          type="search"
+          placeholder="Buscar skill o categoría…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="h-8 max-w-xs text-sm"
+        />
+      </div>
+      {filtered.length === 0 ? (
+        <p className="rounded-md border border-zinc-200 bg-white px-4 py-6 text-center text-sm text-zinc-500">
+          No matches for &quot;{query}&quot;.
+        </p>
+      ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {props.skillGroups.map((group) => (
+          {filtered.map((group) => (
             <div
               key={group.id}
               className="rounded-md border border-zinc-200 bg-white p-4"
@@ -311,8 +351,8 @@ export function PlayDashboard(props: PlayDashboardProps) {
             </div>
           ))}
         </div>
-      </section>
-    </div>
+      )}
+    </section>
   );
 }
 

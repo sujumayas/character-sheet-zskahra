@@ -2,17 +2,41 @@ import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
 
+import { NewCharacterButton } from "./new-character-button";
+
 export default async function CharactersPage() {
   const supabase = await createClient();
-  const { data: characters, error } = await supabase
-    .from("characters")
-    .select("id, name, character_name, level, status")
-    .order("name", { ascending: true });
+
+  const [
+    { data: characters, error },
+    { data: userData },
+    { data: stats },
+    { data: traits },
+  ] = await Promise.all([
+    supabase
+      .from("characters")
+      .select("id, name, character_name, level, status")
+      .order("name", { ascending: true }),
+    supabase.auth.getUser(),
+    supabase.from("stats").select("id"),
+    supabase.from("traits").select("id"),
+  ]);
+
+  const userId = userData?.user?.id ?? null;
+  const statIds = stats?.map((s) => s.id) ?? [];
+  const traitIds = traits?.map((t) => t.id) ?? [];
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Your characters</h1>
+        {userId && (
+          <NewCharacterButton
+            userId={userId}
+            statIds={statIds}
+            traitIds={traitIds}
+          />
+        )}
       </div>
 
       {error && (
@@ -24,7 +48,7 @@ export default async function CharactersPage() {
       {!error && (!characters || characters.length === 0) && (
         <div className="rounded-md border border-dashed border-zinc-300 p-8 text-center">
           <p className="text-sm text-zinc-500">
-            No characters yet. The seed character lands at the end of Phase 1.
+            No characters yet. Click <span className="font-medium">New character</span> to start one.
           </p>
         </div>
       )}

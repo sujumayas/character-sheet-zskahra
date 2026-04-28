@@ -1,0 +1,114 @@
+[
+  {
+    "tab": "Playing Dashboard",
+    "file": "sheets/Playing_Dashboard.json",
+    "non_empty_cells": 344,
+    "size_kb": 25.9,
+    "max_row": 1041,
+    "max_col": 26
+  },
+  {
+    "tab": "Combat Dashboard",
+    "file": "sheets/Combat_Dashboard.json",
+    "non_empty_cells": 377,
+    "size_kb": 30.0,
+    "max_row": 1042,
+    "max_col": 26
+  },
+  {
+    "tab": "Equipment",
+    "file": "sheets/Equipment.json",
+    "non_empty_cells": 157,
+    "size_kb": 11.7,
+    "max_row": 44,
+    "max_col": 9
+  },
+  {
+    "tab": "1. Stats & Traits",
+    "file": "sheets/1._Stats_Traits.json",
+    "non_empty_cells": 1221,
+    "size_kb": 78.9,
+    "max_row": 1035,
+    "max_col": 24
+  },
+  {
+    "tab": "2.1 Categories",
+    "file": "sheets/2.1_Categories.json",
+    "non_empty_cells": 385,
+    "size_kb": 30.0,
+    "max_row": 49,
+    "max_col": 15
+  },
+  {
+    "tab": "2.2 General Skills",
+    "file": "sheets/2.2_General_Skills.json",
+    "non_empty_cells": 1304,
+    "size_kb": 97.2,
+    "max_row": 132,
+    "max_col": 16
+  },
+  {
+    "tab": "2.3 Weapon Dexterity",
+    "file": "sheets/2.3_Weapon_Dexterity.json",
+    "non_empty_cells": 1305,
+    "size_kb": 124.2,
+    "max_row": 25,
+    "max_col": 61
+  },
+  {
+    "tab": "2.4 Magic",
+    "file": "sheets/2.4_Magic.json",
+    "non_empty_cells": 88,
+    "size_kb": 6.5,
+    "max_row": 988,
+    "max_col": 26
+  },
+  {
+    "tab": "2.5 Talents&Flaws",
+    "file": "sheets/2.5_Talents_Flaws.json",
+    "non_empty_cells": 29,
+    "size_kb": 2.5,
+    "max_row": 1002,
+    "max_col": 26
+  },
+  {
+    "tab": "TALENTS|FLAWS LIST",
+    "file": "sheets/TALENTS_FLAWS_LIST.json",
+    "non_empty_cells": 1265,
+    "size_kb": 119.9,
+    "max_row": 1008,
+    "max_col": 26
+  },
+  {
+    "tab": "Talents tables",
+    "file": "sheets/Talents_tables.json",
+    "non_empty_cells": 666,
+    "size_kb": 45.6,
+    "max_row": 946,
+    "max_col": 26
+  },
+  {
+    "tab": "Training Packages",
+    "file": "sheets/Training_Packages.json",
+    "non_empty_cells": 50,
+    "size_kb": 3.4,
+    "max_row": 1000,
+    "max_col": 24
+  },
+  {
+    "tab": "Level Progression",
+    "file": "sheets/Level_Progression.json",
+    "non_empty_cells": 374,
+    "size_kb": 24.2,
+    "max_row": 86,
+    "max_col": 11
+  },
+  {
+    "tab": "Adolescence ranks",
+    "file": "sheets/Adolescence_ranks.json",
+    "non_empty_cells": 537,
+    "size_kb": 31.9,
+    "max_row": 78,
+    "max_col": 16
+  }
+]

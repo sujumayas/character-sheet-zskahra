@@ -30,7 +30,7 @@ import { dpCostPerRank, type StatCostRule } from "@/lib/domain/dp-cost";
 import { computeSkillLikeRow } from "@/lib/domain/modifiers";
 import {
   PROFESSION_ADAPTABILITY_BONUS,
-  dpAvailableAtLevel,
+  maxRanksAt,
 } from "@/lib/domain/progression";
 import { ranksValueSkill } from "@/lib/domain/rules";
 import { createClient } from "@/lib/supabase/client";
@@ -117,6 +117,12 @@ export interface SkillsEditorProps {
   talentSkillBonuses: ReadonlyArray<readonly [string, number]>;
   adolescentSkillGrants: ReadonlyArray<readonly [string, number]>;
   adolescentCategoryGrants: ReadonlyArray<readonly [string, number]>;
+  dpBudget: {
+    totalEarned: number;
+    totalSpent: number;
+    thisBucketSpent: number;
+    derivedLevel: number;
+  };
 }
 
 function indexBy(rows: ModifierRow[]): Map<string, number> {
@@ -229,29 +235,14 @@ export function SkillsEditor(props: SkillsEditorProps) {
     return ranksValueSkill(playerRanks + adolRanks);
   }
 
-  // DP available
-  const dpAvailable = useMemo(() => {
-    const tiers = props.levelProgression
-      .filter(
-        (t): t is { level: number; min_total_dp: number; max_total_dp: number } =>
-          t.level != null && t.min_total_dp != null && t.max_total_dp != null,
-      )
-      .map((t) => ({
-        level: t.level,
-        min_total_dp: t.min_total_dp,
-        max_total_dp: t.max_total_dp,
-      }));
-    return dpAvailableAtLevel(props.character.level ?? 1, tiers, {
-      hasProfessionAdaptability: props.character.has_profession_adaptability,
-    });
-  }, [
-    props.levelProgression,
-    props.character.level,
-    props.character.has_profession_adaptability,
-  ]);
+  // Cross-tab DP budget (centralized: total earned across all sessions vs.
+  // total spent across all editors). Local skills spend is recomputed and
+  // swapped into the unified total so optimistic edits show up live.
+  const dpAvailable = props.dpBudget.totalEarned;
+  const derivedLevel = props.dpBudget.derivedLevel;
+  const rankCap = maxRanksAt(derivedLevel);
 
-  // DP spent on skills
-  const dpSpent = useMemo(() => {
+  const dpSpentThisTab = useMemo(() => {
     let total = 0;
     for (const sk of skills) {
       const r = rowBySkillId.get(sk.id);
@@ -261,6 +252,11 @@ export function SkillsEditor(props: SkillsEditorProps) {
     }
     return total;
   }, [skills, rowBySkillId, statTotalAndCost, props.statCostRules]);
+
+  const dpSpent =
+    props.dpBudget.totalSpent -
+    props.dpBudget.thisBucketSpent +
+    dpSpentThisTab;
 
   // Group skills by category (with collapsible sections)
   const grouped = useMemo(() => {
@@ -460,8 +456,8 @@ export function SkillsEditor(props: SkillsEditorProps) {
         <DpBudget
           label={
             props.character.has_profession_adaptability
-              ? `Skills DP (incl. +${PROFESSION_ADAPTABILITY_BONUS} adaptability)`
-              : "Skills DP"
+              ? `Total DP (incl. +${PROFESSION_ADAPTABILITY_BONUS} adaptability) — L${derivedLevel}, max ${rankCap}/skill`
+              : `Total DP — L${derivedLevel}, max ${rankCap}/skill`
           }
           spent={dpSpent}
           available={dpAvailable}

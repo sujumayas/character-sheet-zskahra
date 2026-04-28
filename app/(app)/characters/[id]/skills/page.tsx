@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 
 import { loadCharacterAdolescentGrants } from "@/lib/data/character-adolescent-grants";
 import { loadCharacterTalentBonuses } from "@/lib/data/character-talent-bonuses";
+import { aggregateCharacterDp } from "@/lib/domain/dp-budget";
+import type { LevelTier } from "@/lib/domain/progression";
 import { createClient } from "@/lib/supabase/server";
 
 import { SkillsEditor } from "./skills-editor";
@@ -72,6 +74,15 @@ export default async function SkillsPage({
 
   if (!character) notFound();
 
+  const tiers: LevelTier[] = (levelProgression ?? []).map((t) => ({
+    level: t.level,
+    min_total_dp: t.min_total_dp,
+    max_total_dp: t.max_total_dp ?? Number.MAX_SAFE_INTEGER,
+  }));
+  const dpBudget = await aggregateCharacterDp(supabase, id, tiers, {
+    hasProfessionAdaptability: character.has_profession_adaptability,
+  });
+
   const raceId = description?.race_id ?? null;
   const birthplaceId = description?.birthplace_id ?? null;
 
@@ -115,6 +126,12 @@ export default async function SkillsPage({
       talentSkillBonuses={Array.from(talentBonuses.skill.entries())}
       adolescentSkillGrants={Array.from(adolescentGrants.skill.entries())}
       adolescentCategoryGrants={Array.from(adolescentGrants.category.entries())}
+      dpBudget={{
+        totalEarned: dpBudget.totalEarned,
+        totalSpent: dpBudget.totalSpent,
+        thisBucketSpent: dpBudget.byBucket.skills,
+        derivedLevel: dpBudget.derivedLevel,
+      }}
     />
   );
 }

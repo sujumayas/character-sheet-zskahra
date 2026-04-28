@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 
+import { aggregateCharacterDp } from "@/lib/domain/dp-budget";
+import type { LevelTier } from "@/lib/domain/progression";
 import { createClient } from "@/lib/supabase/server";
 
 import { TalentsEditor } from "./talents-editor";
@@ -84,6 +86,18 @@ export default async function TalentsPage({
     ctIds.has(c.character_talent_id),
   );
 
+  const { data: levelProgression } = await supabase
+    .from("level_progression")
+    .select("level, min_total_dp, max_total_dp");
+  const tiers: LevelTier[] = (levelProgression ?? []).map((t) => ({
+    level: t.level,
+    min_total_dp: t.min_total_dp,
+    max_total_dp: t.max_total_dp ?? Number.MAX_SAFE_INTEGER,
+  }));
+  const dpBudget = await aggregateCharacterDp(supabase, id, tiers, {
+    hasProfessionAdaptability: character.has_profession_adaptability,
+  });
+
   return (
     <TalentsEditor
       characterId={id}
@@ -97,6 +111,12 @@ export default async function TalentsPage({
       categories={categories ?? []}
       skills={skills ?? []}
       weapons={weapons ?? []}
+      dpBudget={{
+        totalEarned: dpBudget.totalEarned,
+        totalSpent: dpBudget.totalSpent,
+        thisBucketSpent: dpBudget.byBucket.talents,
+        derivedLevel: dpBudget.derivedLevel,
+      }}
     />
   );
 }

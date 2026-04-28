@@ -2,6 +2,10 @@ import { notFound } from "next/navigation";
 
 import { loadCharacterAdolescentGrants } from "@/lib/data/character-adolescent-grants";
 import { loadCharacterTalentBonuses } from "@/lib/data/character-talent-bonuses";
+import {
+  derivedInitiative,
+  quickPerception,
+} from "@/lib/domain/combat";
 import { armorTotals, computeArmorRow, computeShield } from "@/lib/domain/equipment";
 import {
   computeSkillLikeRow,
@@ -51,9 +55,7 @@ export default async function CombatPage({
       .maybeSingle(),
     supabase
       .from("character_description")
-      .select(
-        "race_id, birthplace_id, fate_points, wear_armor_score",
-      )
+      .select("race_id, birthplace_id, fate_points")
       .eq("character_id", id)
       .maybeSingle(),
     supabase
@@ -310,6 +312,7 @@ export default async function CombatPage({
     Array.from(adolescentGrants.skill.entries()),
   );
   const skillTotals = new Map<string, number>();
+  const skillTotalById = new Map<string, number>();
   for (const s of skills ?? []) {
     if (!s.id) continue;
     const cs = characterSkillById.get(s.id);
@@ -329,6 +332,7 @@ export default async function CombatPage({
       category_bonus: categoryBonus,
     });
     skillTotals.set(s.name, row.total);
+    skillTotalById.set(s.id, row.total);
   }
 
   // Weapon naturals — for OB list. Reuses the formula from weapons-editor.
@@ -368,7 +372,18 @@ export default async function CombatPage({
   const characterArmorByBodyPartId = new Map(
     (characterArmor ?? []).map((r) => [r.body_part_id, r]),
   );
-  const wearArmor = description?.wear_armor_score ?? 0;
+  // "Wear Armor" — sheet H1 = '2.2 General Skills'!M11, the skill named
+  // "Armor" inside the "Athletic Stamina" category. There is a second
+  // "Armor" skill under "Crafting Lores" (smithing lore) that is NOT the
+  // same — match on (category, name) to pick the right one.
+  const categoryById = new Map((categories ?? []).map((c) => [c.id, c]));
+  const wearArmorSkill = (skills ?? []).find((s) => {
+    const cat = s.category_id ? categoryById.get(s.category_id) : null;
+    return s.name === "Armor" && cat?.name === "Athletic Stamina";
+  });
+  const wearArmor = wearArmorSkill
+    ? skillTotalById.get(wearArmorSkill.id) ?? 0
+    : 0;
   const armorRows = (bodyParts ?? []).map((bp) => {
     const armor = characterArmorByBodyPartId.get(bp.id);
     const armorType = armor ? armorTypeById.get(armor.armor_type_id) : null;
@@ -454,6 +469,47 @@ export default async function CombatPage({
     };
   }
 
+  // ---- Auto-derived game values (override `total` with computed values) ----
+  //
+  // Sheet rules implemented (see docs/sheet-references/formulas.md):
+  //   perception_passive  ← skill "Perception Passive" total
+  //   perception_active   ← skill "Perception Active" total
+  //   quick_perception    ← perception_active − 30
+  //   initiative          ← qu_total + ag_total + armor_penalty + base_value
+  //                          (`base_value` is a manual offset; armor_penalty
+  //                           is non-positive)
+  //   db_shield (init wise) is computed inline by the dashboard via
+  //   initiativeWithShield() — already done.
+  //
+  // Manual / no formula on the sheet:
+  //   db (defense base), combat_perception, fate_points → kept manual.
+  function overrideTotal(
+    code: string,
+    derivedTotal: number,
+  ): ReturnType<typeof gameValueState> {
+    const state = gameValueState(code);
+    if (!state) return null;
+    return { ...state, total: derivedTotal };
+  }
+
+  const passiveSkill = (skills ?? []).find(
+    (s) => s.name === "Perception Passive",
+  );
+  const activeSkill = (skills ?? []).find(
+    (s) => s.name === "Perception Active",
+  );
+  const passiveTotal = passiveSkill
+    ? skillTotalById.get(passiveSkill.id) ?? 0
+    : 0;
+  const activeTotal = activeSkill
+    ? skillTotalById.get(activeSkill.id) ?? 0
+    : 0;
+
+  const initiativeRow = characterGameValueById.get(
+    gameValueByCode.get("initiative")?.id ?? "",
+  );
+  const initiativeManualOffset = initiativeRow?.base_value ?? 0;
+
   return (
     <CombatDashboard
       characterId={id}
@@ -495,13 +551,24 @@ export default async function CombatPage({
       armorPenalty={armorTotalsResult.totalPenalty}
       armorRows={armorRows}
       shield={shieldDetails}
-      initiative={gameValueState("initiative")}
+      initiative={overrideTotal(
+        "initiative",
+        derivedInitiative({
+          quTotal: statTotalByCode("qu"),
+          agTotal: statTotalByCode("ag"),
+          armorPenalty: armorTotalsResult.totalPenalty,
+          manualOffset: initiativeManualOffset,
+        }),
+      )}
       db={gameValueState("db")}
       dbShield={gameValueState("db_shield")}
-      perceptionPassive={gameValueState("perception_passive")}
-      perceptionActive={gameValueState("perception_active")}
+      perceptionPassive={overrideTotal("perception_passive", passiveTotal)}
+      perceptionActive={overrideTotal("perception_active", activeTotal)}
       combatPerception={gameValueState("combat_perception")}
-      quickPerception={gameValueState("quick_perception")}
+      quickPerception={overrideTotal(
+        "quick_perception",
+        quickPerception(activeTotal),
+      )}
       bmrNoArmor={gameValueState("bmr_no_armor")}
       bmrWithArmor={gameValueState("bmr_with_armor")}
     />

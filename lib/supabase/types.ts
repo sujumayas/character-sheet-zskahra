@@ -1250,6 +1250,61 @@ export type Database = {
           },
         ]
       }
+      character_pending_choices: {
+        Row: {
+          character_id: string
+          choice_type: string
+          created_at: string
+          id: string
+          notes: string | null
+          ranks_total: number
+          source_birthplace_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          character_id: string
+          choice_type: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          ranks_total: number
+          source_birthplace_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          character_id?: string
+          choice_type?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          ranks_total?: number
+          source_birthplace_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_pending_choices_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "character_traits_total"
+            referencedColumns: ["character_id"]
+          },
+          {
+            foreignKeyName: "character_pending_choices_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_pending_choices_source_birthplace_id_fkey"
+            columns: ["source_birthplace_id"]
+            isOneToOne: false
+            referencedRelation: "birthplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       character_shield: {
         Row: {
           character_id: string

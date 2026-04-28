@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -148,6 +149,9 @@ export interface StatsEditorProps {
   talentStatBonuses: ReadonlyArray<readonly [string, number]>;
   talentTraitBonuses: ReadonlyArray<readonly [string, number]>;
   adolescentTraitGrants: ReadonlyArray<readonly [string, number]>;
+  ageRange: { min: number; max: number } | null;
+  heightRange: { min: number; max: number } | null;
+  weightRange: { min: number; max: number } | null;
 }
 
 function indexBy<K extends keyof Modifier>(
@@ -464,6 +468,9 @@ export function StatsEditor(props: StatsEditorProps) {
         birthplaces={props.birthplaces}
         professions={props.professions}
         raceSexes={props.raceSexes}
+        ageRange={props.ageRange}
+        heightRange={props.heightRange}
+        weightRange={props.weightRange}
         onUpdateCharacter={updateCharacter}
         onUpdateDescription={updateDescription}
       />
@@ -648,6 +655,9 @@ function IdentityCard({
   birthplaces,
   professions,
   raceSexes,
+  ageRange,
+  heightRange,
+  weightRange,
   onUpdateCharacter,
   onUpdateDescription,
 }: {
@@ -658,9 +668,13 @@ function IdentityCard({
   birthplaces: NamedRow[];
   professions: NamedRow[];
   raceSexes: RaceSex[];
+  ageRange: { min: number; max: number } | null;
+  heightRange: { min: number; max: number } | null;
+  weightRange: { min: number; max: number } | null;
   onUpdateCharacter: (patch: Partial<CharacterRow>) => void;
-  onUpdateDescription: (patch: Partial<DescriptionRow>) => void;
+  onUpdateDescription: (patch: Partial<DescriptionRow>) => void | Promise<void>;
 }) {
+  const router = useRouter();
   return (
     <section className="rounded-md border border-zinc-200 bg-white p-5">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
@@ -700,9 +714,10 @@ function IdentityCard({
               value={description.race_id}
               options={races}
               placeholder="Select race"
-              onChange={(id) =>
-                onUpdateDescription({ race_id: id, sex_id: null })
-              }
+              onChange={async (id) => {
+                await onUpdateDescription({ race_id: id, sex_id: null });
+                router.refresh();
+              }}
             />
             {description.race_id && (
               <span
@@ -714,13 +729,12 @@ function IdentityCard({
             )}
           </div>
         </FieldEditor>
-        <FieldEditor label="Profession">
+        <FieldEditor label="Profession (optional)">
           <NullableSelect
             value={description.profession_id}
             options={professions}
             placeholder={professions.length ? "Select profession" : "No data"}
             onChange={(id) => onUpdateDescription({ profession_id: id })}
-            disabled={professions.length === 0}
           />
         </FieldEditor>
         <FieldEditor label="Birthplace">
@@ -737,33 +751,53 @@ function IdentityCard({
             options={raceSexes}
             placeholder={raceSexes.length ? "Select sex" : "Pick a race first"}
             onChange={(id) => onUpdateDescription({ sex_id: id })}
-            disabled={raceSexes.length === 0}
           />
         </FieldEditor>
         <FieldEditor label="Age">
-          <EditableNumber
-            value={description.age}
-            min={0}
-            max={9999}
-            onCommit={(next) => onUpdateDescription({ age: next })}
-          />
+          <div className="flex flex-col gap-1">
+            <EditableNumber
+              value={description.age}
+              min={ageRange?.min ?? 0}
+              max={ageRange?.max ?? 9999}
+              onCommit={(next) => onUpdateDescription({ age: next })}
+            />
+            {ageRange && (
+              <span className="text-xs text-zinc-500">
+                Race: {ageRange.min}–{ageRange.max}
+              </span>
+            )}
+          </div>
         </FieldEditor>
 
         <FieldEditor label="Height (cm)">
-          <EditableNumber
-            value={description.height_cm}
-            min={0}
-            max={400}
-            onCommit={(next) => onUpdateDescription({ height_cm: next })}
-          />
+          <div className="flex flex-col gap-1">
+            <EditableNumber
+              value={description.height_cm}
+              min={heightRange?.min ?? 0}
+              max={heightRange?.max ?? 400}
+              onCommit={(next) => onUpdateDescription({ height_cm: next })}
+            />
+            {heightRange && (
+              <span className="text-xs text-zinc-500">
+                Race: {heightRange.min}–{heightRange.max} cm
+              </span>
+            )}
+          </div>
         </FieldEditor>
         <FieldEditor label="Weight (kg)">
-          <EditableNumber
-            value={description.weight_kg}
-            min={0}
-            max={500}
-            onCommit={(next) => onUpdateDescription({ weight_kg: next })}
-          />
+          <div className="flex flex-col gap-1">
+            <EditableNumber
+              value={description.weight_kg}
+              min={weightRange?.min ?? 0}
+              max={weightRange?.max ?? 500}
+              onCommit={(next) => onUpdateDescription({ weight_kg: next })}
+            />
+            {weightRange && (
+              <span className="text-xs text-zinc-500">
+                Race: {weightRange.min}–{weightRange.max} kg
+              </span>
+            )}
+          </div>
         </FieldEditor>
         <FieldEditor label="Fate points">
           <EditableNumber

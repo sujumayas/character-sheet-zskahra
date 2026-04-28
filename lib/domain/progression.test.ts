@@ -4,6 +4,7 @@ import {
   PROFESSION_ADAPTABILITY_BONUS,
   dpAvailableAtLevel,
   levelFromTotalDp,
+  maxRanksAt,
   type LevelTier,
 } from "./progression";
 
@@ -47,5 +48,24 @@ describe("dpAvailableAtLevel", () => {
 
   test("unknown level → 0", () => {
     expect(dpAvailableAtLevel(99, TIERS)).toBe(0);
+  });
+});
+
+describe("maxRanksAt (Zskahra house rule: 3 per level + 3)", () => {
+  test("L1 → 6", () => {
+    expect(maxRanksAt(1)).toBe(6);
+  });
+
+  test("L2 → 9", () => {
+    expect(maxRanksAt(2)).toBe(9);
+  });
+
+  test("L5 → 18", () => {
+    expect(maxRanksAt(5)).toBe(18);
+  });
+
+  test("clamps level<1 to L1 floor (6)", () => {
+    expect(maxRanksAt(0)).toBe(6);
+    expect(maxRanksAt(-3)).toBe(6);
   });
 });

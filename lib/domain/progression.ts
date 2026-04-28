@@ -44,3 +44,13 @@ export function dpAvailableAtLevel(
     (options.hasProfessionAdaptability ? PROFESSION_ADAPTABILITY_BONUS : 0)
   );
 }
+
+/**
+ * Hard cap on ranks per skill/category/weapon at the given level (Zskahra
+ * house rule: 3 per level + 3 starter). At level 1 the cap is 6, at level 2
+ * it is 9, and so on. Clamped at minimum 6 (level 1).
+ */
+export function maxRanksAt(level: number): number {
+  const safeLevel = Math.max(level, 1);
+  return 3 * safeLevel + 3;
+}

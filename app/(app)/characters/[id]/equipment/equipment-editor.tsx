@@ -78,7 +78,10 @@ export interface EquipmentEditorProps {
 export function EquipmentEditor(props: EquipmentEditorProps) {
   const supabase = useMemo(() => createClient(), []);
 
-  const [wearArmor, setWearArmor] = useState(props.wearArmorScore);
+  // Wear Armor is auto-derived from the "Armor" skill (Athletic Stamina).
+  // The page recomputes on every load; we mirror it here for the per-part
+  // penalty preview. Read-only — edits happen on the Skills page.
+  const wearArmor = props.wearArmorScore;
   const [armorRows, setArmorRows] = useState<CharacterArmorRow[]>(
     props.characterArmor,
   );
@@ -144,24 +147,6 @@ export function EquipmentEditor(props: EquipmentEditorProps) {
   }, [shieldRow, shieldById]);
 
   // ---- mutations ----
-
-  async function commitWearArmor(next: number) {
-    const prev = wearArmor;
-    setWearArmor(next);
-    const { error } = await supabase
-      .from("character_description")
-      .upsert(
-        {
-          character_id: props.characterId,
-          wear_armor_score: next,
-        },
-        { onConflict: "character_id" },
-      );
-    if (error) {
-      setWearArmor(prev);
-      toast.error(`Failed to save Wear Armor: ${error.message}`);
-    }
-  }
 
   async function commitArmorChoice(bodyPartId: string, armorTypeId: string | null) {
     const prev = armorRows;
@@ -325,15 +310,12 @@ export function EquipmentEditor(props: EquipmentEditorProps) {
             <label className="text-xs uppercase tracking-wide text-zinc-500">
               Wear Armor skill total
             </label>
-            <div className="mt-1 max-w-32">
-              <EditableNumber
-                value={wearArmor}
-                onCommit={commitWearArmor}
-              />
+            <div className="mt-1 text-2xl font-semibold tabular-nums">
+              {wearArmor}
             </div>
             <p className="mt-1 text-xs text-zinc-500">
-              Type your Wear Armor total from the Skills page. Drives the
-              per-part penalty clamp.
+              Auto-derived from your Skills page (Athletic Stamina → Armor).
+              Drives the per-part penalty clamp.
             </p>
           </div>
           <div>
@@ -400,7 +382,14 @@ export function EquipmentEditor(props: EquipmentEditorProps) {
                         }
                       >
                         <SelectTrigger size="sm" className="w-full min-w-40">
-                          <SelectValue placeholder="None" />
+                          <SelectValue placeholder="None">
+                            {(current) =>
+                              current === "__none__" || current == null
+                                ? "None"
+                                : armorTypeById.get(current as string)?.name ??
+                                  "None"
+                            }
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none__">None</SelectItem>

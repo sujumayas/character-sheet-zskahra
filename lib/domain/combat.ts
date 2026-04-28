@@ -72,3 +72,33 @@ export function activityThresholdLabels(
 export function initiativeWithShield(initiativeBase: number): number {
   return initiativeBase - SHIELD_INITIATIVE_PENALTY;
 }
+
+// Quick perception = active perception − 30 (Anima "1-turn snap glance"
+// penalty). Sheet cell H9 = H7 − 30.
+export const QUICK_PERCEPTION_PENALTY = 30;
+
+export function quickPerception(perceptionActive: number): number {
+  return perceptionActive - QUICK_PERCEPTION_PENALTY;
+}
+
+/**
+ * Best-effort derived initiative.
+ *
+ * The Google Sheet has Initiative as a typed literal (no formula), so we
+ * pick a sensible Anima-flavored default instead: Quickness total + Agility
+ * total minus armor penalty (which is already non-positive in our model).
+ * `manualOffset` is the player-controlled adjustment that lives on
+ * `character_game_values.base_value` — defaults to 0; positive numbers
+ * model talents / racial init bonuses; negative numbers a debuff.
+ *
+ * If the user later wants the rulebook breakdown (race init mod, class
+ * init, weapon init), extend this without changing callers.
+ */
+export function derivedInitiative(input: {
+  quTotal: number;
+  agTotal: number;
+  armorPenalty: number; // <= 0 in our model
+  manualOffset: number;
+}): number {
+  return input.quTotal + input.agTotal + input.armorPenalty + input.manualOffset;
+}

@@ -102,6 +102,12 @@ export interface TalentsEditorProps {
   categories: CategoryLookup[];
   skills: SkillLookup[];
   weapons: NamedRow[];
+  dpBudget: {
+    totalEarned: number;
+    totalSpent: number;
+    thisBucketSpent: number;
+    derivedLevel: number;
+  };
 }
 
 type SectionKey = "racial" | "main" | "secondary" | "flaw";
@@ -150,7 +156,7 @@ export function TalentsEditor(props: TalentsEditorProps) {
   // ---- DP totals ----
   // Talent DP cost is signed: flaws have negative cost, so they ADD to budget.
   // We render "spent" as the absolute talent cost net (positive = DP burned).
-  const dpSpentOnTalents = useMemo(() => {
+  const dpSpentThisTab = useMemo(() => {
     let total = 0;
     for (const r of rows) {
       if (!r.is_active) continue;
@@ -160,6 +166,14 @@ export function TalentsEditor(props: TalentsEditorProps) {
     }
     return total;
   }, [rows, talentById]);
+
+  // Cross-tab unified spent (swap this tab's value into the budget).
+  const dpSpent =
+    props.dpBudget.totalSpent -
+    props.dpBudget.thisBucketSpent +
+    dpSpentThisTab;
+  const dpAvailable = props.dpBudget.totalEarned;
+  const derivedLevel = props.dpBudget.derivedLevel;
 
   // ---- group by section ----
   const sectioned = useMemo(() => {
@@ -194,7 +208,7 @@ export function TalentsEditor(props: TalentsEditorProps) {
         character_id: props.characterId,
         talent_id: talent.id,
         times_taken: 1,
-        acquired_level: props.character.level ?? 1,
+        acquired_level: derivedLevel,
         is_active: true,
         approved_by_dm: !talent.requires_dm_approval,
       })
@@ -294,9 +308,9 @@ export function TalentsEditor(props: TalentsEditorProps) {
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
       <DpBudget
-        label="Talents DP (active only)"
-        spent={dpSpentOnTalents}
-        available={0 /* talent DP draws from the same pool; budget tracked on Categories/Skills/Weapons. Show this as informational. */}
+        label={`Total DP — L${derivedLevel} (talents are ${dpSpentThisTab >= 0 ? `costing ${dpSpentThisTab}` : `granting ${-dpSpentThisTab}`} DP)`}
+        spent={dpSpent}
+        available={dpAvailable}
       />
 
       {SECTIONS.map((section) => (

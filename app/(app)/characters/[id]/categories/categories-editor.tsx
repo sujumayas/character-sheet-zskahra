@@ -10,7 +10,7 @@ import { dpCostPerRank, type StatCostRule } from "@/lib/domain/dp-cost";
 import { computeSkillLikeRow } from "@/lib/domain/modifiers";
 import {
   PROFESSION_ADAPTABILITY_BONUS,
-  dpAvailableAtLevel,
+  maxRanksAt,
 } from "@/lib/domain/progression";
 import { createClient } from "@/lib/supabase/client";
 
@@ -74,6 +74,12 @@ export interface CategoriesEditorProps {
   talentStatBonuses: ReadonlyArray<readonly [string, number]>;
   talentCategoryBonuses: ReadonlyArray<readonly [string, number]>;
   adolescentCategoryGrants: ReadonlyArray<readonly [string, number]>;
+  dpBudget: {
+    totalEarned: number;
+    totalSpent: number;
+    thisBucketSpent: number;
+    derivedLevel: number;
+  };
 }
 
 function indexBy(rows: ModifierRow[]): Map<string, number> {
@@ -164,31 +170,14 @@ export function CategoriesEditor(props: CategoriesEditorProps) {
     return statTotalAndCost.get(statId)?.total ?? 0;
   }
 
-  // Total DP available for the character.
-  const dpAvailable = useMemo(() => {
-    const tiers = props.levelProgression
-      .filter(
-        (t): t is { level: number; min_total_dp: number; max_total_dp: number } =>
-          t.level != null && t.min_total_dp != null && t.max_total_dp != null,
-      )
-      .map((t) => ({
-        level: t.level,
-        min_total_dp: t.min_total_dp,
-        max_total_dp: t.max_total_dp,
-      }));
-    const level = props.character.level ?? 1;
-    const dp = dpAvailableAtLevel(level, tiers, {
-      hasProfessionAdaptability: props.character.has_profession_adaptability,
-    });
-    return dp;
-  }, [
-    props.levelProgression,
-    props.character.level,
-    props.character.has_profession_adaptability,
-  ]);
+  // Cross-tab DP budget (centralized: total earned across all sessions vs.
+  // total spent across all editors). Local categories spend swapped into the
+  // unified total so optimistic edits show up live.
+  const dpAvailable = props.dpBudget.totalEarned;
+  const derivedLevel = props.dpBudget.derivedLevel;
+  const rankCap = maxRanksAt(derivedLevel);
 
-  // DP spent on categories.
-  const dpSpent = useMemo(() => {
+  const dpSpentThisTab = useMemo(() => {
     let total = 0;
     for (const cat of props.categories) {
       const r = rowByCategoryId.get(cat.id);
@@ -198,6 +187,11 @@ export function CategoriesEditor(props: CategoriesEditorProps) {
     }
     return total;
   }, [props.categories, rowByCategoryId, statTotalAndCost, props.statCostRules]);
+
+  const dpSpent =
+    props.dpBudget.totalSpent -
+    props.dpBudget.thisBucketSpent +
+    dpSpentThisTab;
 
   const groupedCategories = useMemo(() => {
     const buckets = new Map<string, CategoryLookup[]>();
@@ -336,8 +330,8 @@ export function CategoriesEditor(props: CategoriesEditorProps) {
       <DpBudget
         label={
           props.character.has_profession_adaptability
-            ? `Categories DP (incl. +${PROFESSION_ADAPTABILITY_BONUS} adaptability)`
-            : "Categories DP"
+            ? `Total DP (incl. +${PROFESSION_ADAPTABILITY_BONUS} adaptability) — L${derivedLevel}, max ${rankCap}/category`
+            : `Total DP — L${derivedLevel}, max ${rankCap}/category`
         }
         spent={dpSpent}
         available={dpAvailable}
@@ -355,6 +349,7 @@ export function CategoriesEditor(props: CategoriesEditorProps) {
                   <th className="px-3 py-2 font-medium">Category</th>
                   <th className="px-3 py-2 font-medium">Stat</th>
                   <th className="px-3 py-2 font-medium text-right">Cost/rank</th>
+                  <th className="px-3 py-2 font-medium text-right">DP Ranks</th>
                   <th className="px-3 py-2 font-medium text-right">Ranks</th>
                   <th className="px-3 py-2 font-medium text-right">Ranks val</th>
                   <th className="px-3 py-2 font-medium text-right">Stat val</th>
@@ -386,17 +381,7 @@ export function CategoriesEditor(props: CategoriesEditorProps) {
                   });
                   return (
                     <tr key={cat.id}>
-                      <td className="px-3 py-2 font-medium">
-                        {cat.name}
-                        {adolRanks > 0 && (
-                          <span
-                            title={`Free adolescent ranks from your birthplace`}
-                            className="ml-2 rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700"
-                          >
-                            +{adolRanks} adol
-                          </span>
-                        )}
-                      </td>
+                      <td className="px-3 py-2 font-medium">{cat.name}</td>
                       <td className="px-3 py-2 text-zinc-500">
                         {stat?.code ?? "—"}
                       </td>
@@ -408,9 +393,20 @@ export function CategoriesEditor(props: CategoriesEditorProps) {
                           className="justify-end"
                           value={playerRanks}
                           min={0}
-                          max={50}
+                          max={rankCap}
                           onCommit={(next) => commitCategoryRanks(cat, next)}
                         />
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums font-medium">
+                        <span>{ranks}</span>
+                        {adolRanks > 0 && (
+                          <span
+                            title={`${playerRanks} DP rank${playerRanks === 1 ? "" : "s"} + ${adolRanks} free adolescent rank${adolRanks === 1 ? "" : "s"} from birthplace`}
+                            className="ml-1 rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700"
+                          >
+                            +{adolRanks}
+                          </span>
+                        )}
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums">
                         {computed.ranks_value}

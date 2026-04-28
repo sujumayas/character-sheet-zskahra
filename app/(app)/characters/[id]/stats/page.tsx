@@ -87,6 +87,9 @@ export default async function StatsPage({
     { data: bpStatMods },
     { data: bpTraitMods },
     { data: raceSexes },
+    { data: raceAgeRanges },
+    { data: raceHeightRanges },
+    { data: raceWeightRanges },
     talentBonuses,
     adolescentGrants,
   ] = await Promise.all([
@@ -121,9 +124,59 @@ export default async function StatsPage({
           .eq("race_id", raceId)
           .order("name")
       : Promise.resolve({ data: [] }),
+    raceId
+      ? supabase
+          .from("race_age_ranges")
+          .select("min_age, max_age")
+          .eq("race_id", raceId)
+      : Promise.resolve({ data: [] }),
+    raceId
+      ? supabase
+          .from("race_height_ranges")
+          .select("min_height_cm, max_height_cm")
+          .eq("race_id", raceId)
+      : Promise.resolve({ data: [] }),
+    raceId
+      ? supabase
+          .from("race_weight_ranges")
+          .select("min_weight_kg, max_weight_kg")
+          .eq("race_id", raceId)
+      : Promise.resolve({ data: [] }),
     loadCharacterTalentBonuses(supabase, id),
     loadCharacterAdolescentGrants(supabase, id),
   ]);
+
+  // Aggregate race ranges across all life_stages and sexes — most permissive
+  // bounds so the user can enter any valid value for the race regardless of
+  // current life stage / sex selection.
+  function aggregateRange(
+    rows: ReadonlyArray<Record<string, unknown>> | null,
+    minKey: string,
+    maxKey: string,
+  ): { min: number; max: number } | null {
+    if (!rows || rows.length === 0) return null;
+    let min = Infinity;
+    let max = -Infinity;
+    for (const r of rows) {
+      const lo = r[minKey];
+      const hi = r[maxKey];
+      if (typeof lo === "number" && lo < min) min = lo;
+      if (typeof hi === "number" && hi > max) max = hi;
+    }
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+    return { min, max };
+  }
+  const ageRange = aggregateRange(raceAgeRanges, "min_age", "max_age");
+  const heightRange = aggregateRange(
+    raceHeightRanges,
+    "min_height_cm",
+    "max_height_cm",
+  );
+  const weightRange = aggregateRange(
+    raceWeightRanges,
+    "min_weight_kg",
+    "max_weight_kg",
+  );
 
   return (
     <StatsEditor
@@ -148,6 +201,9 @@ export default async function StatsPage({
       talentStatBonuses={Array.from(talentBonuses.stat.entries())}
       talentTraitBonuses={Array.from(talentBonuses.trait.entries())}
       adolescentTraitGrants={Array.from(adolescentGrants.trait.entries())}
+      ageRange={ageRange}
+      heightRange={heightRange}
+      weightRange={weightRange}
     />
   );
 }

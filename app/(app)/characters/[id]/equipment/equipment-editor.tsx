@@ -400,7 +400,14 @@ export function EquipmentEditor(props: EquipmentEditorProps) {
                         }
                       >
                         <SelectTrigger size="sm" className="w-full min-w-40">
-                          <SelectValue placeholder="None" />
+                          <SelectValue placeholder="None">
+                            {(current) =>
+                              current === "__none__" || current == null
+                                ? "None"
+                                : armorTypeById.get(current as string)?.name ??
+                                  "None"
+                            }
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none__">None</SelectItem>

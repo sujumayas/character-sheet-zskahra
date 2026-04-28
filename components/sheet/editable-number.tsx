@@ -61,6 +61,22 @@ export function EditableNumber({
       onBlur={() => {
         if (draft === "" || draft === "-") {
           setDraft(value == null ? "" : String(value));
+          return;
+        }
+        const parsed = Number(draft);
+        if (!Number.isFinite(parsed)) {
+          setDraft(value == null ? "" : String(value));
+          return;
+        }
+        const clamped =
+          min != null && parsed < min
+            ? min
+            : max != null && parsed > max
+              ? max
+              : parsed;
+        if (clamped !== parsed) {
+          setDraft(String(clamped));
+          onCommit(clamped);
         }
       }}
     />

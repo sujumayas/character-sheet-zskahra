@@ -497,6 +497,7 @@ export function SkillsEditor(props: SkillsEditorProps) {
                       <th className="px-3 py-2 font-medium">Skill</th>
                       <th className="px-3 py-2 font-medium">Stat</th>
                       <th className="px-3 py-2 font-medium text-right">Cost/rank</th>
+                      <th className="px-3 py-2 font-medium text-right">DP Ranks</th>
                       <th className="px-3 py-2 font-medium text-right">Ranks</th>
                       <th className="px-3 py-2 font-medium text-right">Ranks val</th>
                       <th className="px-3 py-2 font-medium text-right">Cat val</th>
@@ -534,14 +535,6 @@ export function SkillsEditor(props: SkillsEditorProps) {
                                 Custom
                               </span>
                             )}
-                            {adolRanks > 0 && (
-                              <span
-                                title="Free adolescent ranks from your birthplace"
-                                className="ml-2 rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700"
-                              >
-                                +{adolRanks} adol
-                              </span>
-                            )}
                           </td>
                           <td className="px-3 py-2 text-zinc-500">
                             {stat?.code ?? "—"}
@@ -554,9 +547,20 @@ export function SkillsEditor(props: SkillsEditorProps) {
                               className="justify-end"
                               value={playerRanks}
                               min={0}
-                              max={50}
+                              max={rankCap}
                               onCommit={(next) => commitSkillRanks(sk, next)}
                             />
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums font-medium">
+                            <span>{ranks}</span>
+                            {adolRanks > 0 && (
+                              <span
+                                title={`${playerRanks} DP rank${playerRanks === 1 ? "" : "s"} + ${adolRanks} free adolescent rank${adolRanks === 1 ? "" : "s"} from birthplace`}
+                                className="ml-1 rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700"
+                              >
+                                +{adolRanks}
+                              </span>
+                            )}
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums">
                             {computed.ranks_value}

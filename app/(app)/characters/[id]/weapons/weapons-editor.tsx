@@ -14,7 +14,7 @@ import {
 import { dpCostPerRank, type StatCostRule } from "@/lib/domain/dp-cost";
 import {
   PROFESSION_ADAPTABILITY_BONUS,
-  dpAvailableAtLevel,
+  maxRanksAt,
 } from "@/lib/domain/progression";
 import { ranksValueSkill } from "@/lib/domain/rules";
 import {
@@ -112,6 +112,19 @@ export interface WeaponsEditorProps {
     ranks: number;
     notes: string | null;
   }>;
+  /**
+   * Persistent pending-choice row for the weapon pool. `ranksTotal` is the
+   * canonical pool size (mirrors `adolescentWeaponPoolRanks` after
+   * materialization) — present only when the character has unallocated
+   * weapon ranks from their birthplace.
+   */
+  pendingWeaponPool: { id: string; ranksTotal: number } | null;
+  dpBudget: {
+    totalEarned: number;
+    totalSpent: number;
+    thisBucketSpent: number;
+    derivedLevel: number;
+  };
 }
 
 function indexBy(rows: ModifierRow[]): Map<string, number> {
@@ -274,28 +287,14 @@ export function WeaponsEditor(props: WeaponsEditorProps) {
     [naturals, affinityLinks],
   );
 
-  // DP available
-  const dpAvailable = useMemo(() => {
-    const tiers = props.levelProgression
-      .filter(
-        (t): t is { level: number; min_total_dp: number; max_total_dp: number } =>
-          t.level != null && t.min_total_dp != null && t.max_total_dp != null,
-      )
-      .map((t) => ({
-        level: t.level,
-        min_total_dp: t.min_total_dp,
-        max_total_dp: t.max_total_dp,
-      }));
-    return dpAvailableAtLevel(props.character.level ?? 1, tiers, {
-      hasProfessionAdaptability: props.character.has_profession_adaptability,
-    });
-  }, [
-    props.levelProgression,
-    props.character.level,
-    props.character.has_profession_adaptability,
-  ]);
+  // Cross-tab DP budget (centralized: total earned across all sessions vs.
+  // total spent across all editors). Local weapons spend swapped into the
+  // unified total so optimistic edits show up live.
+  const dpAvailable = props.dpBudget.totalEarned;
+  const derivedLevel = props.dpBudget.derivedLevel;
+  const rankCap = maxRanksAt(derivedLevel);
 
-  const dpSpent = useMemo(() => {
+  const dpSpentThisTab = useMemo(() => {
     let total = 0;
     for (const w of props.weapons) {
       const r = rowByWeaponId.get(w.id);
@@ -305,6 +304,11 @@ export function WeaponsEditor(props: WeaponsEditorProps) {
     }
     return total;
   }, [props.weapons, rowByWeaponId, statTotalAndCost, props.statCostRules]);
+
+  const dpSpent =
+    props.dpBudget.totalSpent -
+    props.dpBudget.thisBucketSpent +
+    dpSpentThisTab;
 
   // Free weapon-rank pool from birthplace (Weapon 1 + Weapon 2 grants).
   const adolPoolAllocated = useMemo(() => {
@@ -468,18 +472,38 @@ export function WeaponsEditor(props: WeaponsEditorProps) {
       <DpBudget
         label={
           props.character.has_profession_adaptability
-            ? `Weapons DP (incl. +${PROFESSION_ADAPTABILITY_BONUS} adaptability)`
-            : "Weapons DP"
+            ? `Total DP (incl. +${PROFESSION_ADAPTABILITY_BONUS} adaptability) — L${derivedLevel}, max ${rankCap}/weapon`
+            : `Total DP — L${derivedLevel}, max ${rankCap}/weapon`
         }
         spent={dpSpent}
         available={dpAvailable}
       />
 
       {props.adolescentWeaponPoolRanks > 0 && (
-        <div className="rounded-md border border-emerald-200 bg-emerald-50/50 px-4 py-3 text-sm">
+        <div
+          className={`rounded-md border px-4 py-3 text-sm ${
+            adolPoolRemaining > 0
+              ? "border-amber-300 bg-amber-50"
+              : adolPoolRemaining < 0
+                ? "border-red-300 bg-red-50"
+                : "border-emerald-200 bg-emerald-50/50"
+          }`}
+        >
           <div className="flex items-baseline justify-between">
-            <span className="font-medium text-emerald-900">
-              Birthplace weapon picks
+            <span
+              className={`font-medium ${
+                adolPoolRemaining > 0
+                  ? "text-amber-900"
+                  : adolPoolRemaining < 0
+                    ? "text-red-900"
+                    : "text-emerald-900"
+              }`}
+            >
+              {adolPoolRemaining > 0
+                ? `⚠ ${adolPoolRemaining} free adolescent weapon rank${adolPoolRemaining === 1 ? "" : "s"} pending — pick weapons below`
+                : adolPoolRemaining < 0
+                  ? `Over-allocated by ${-adolPoolRemaining}`
+                  : "Birthplace weapon picks"}
             </span>
             <span
               className={`tabular-nums ${
@@ -487,18 +511,21 @@ export function WeaponsEditor(props: WeaponsEditorProps) {
                   ? "font-semibold text-red-700"
                   : adolPoolRemaining === 0
                     ? "text-emerald-800"
-                    : "text-emerald-900"
+                    : "text-amber-800"
               }`}
             >
               {adolPoolAllocated} / {props.adolescentWeaponPoolRanks} allocated
-              {adolPoolRemaining > 0
-                ? ` (${adolPoolRemaining} remaining)`
-                : adolPoolRemaining < 0
-                  ? ` (over by ${-adolPoolRemaining})`
-                  : ""}
             </span>
           </div>
-          <p className="mt-1 text-xs text-emerald-700">
+          <p
+            className={`mt-1 text-xs ${
+              adolPoolRemaining > 0
+                ? "text-amber-700"
+                : adolPoolRemaining < 0
+                  ? "text-red-700"
+                  : "text-emerald-700"
+            }`}
+          >
             {props.adolescentWeaponPoolBreakdown
               .map(
                 (b) =>
@@ -566,7 +593,7 @@ export function WeaponsEditor(props: WeaponsEditorProps) {
                           className="justify-end"
                           value={n.own_ranks}
                           min={0}
-                          max={50}
+                          max={rankCap}
                           onCommit={(next) => commitWeaponRanks(w, next)}
                         />
                       </td>

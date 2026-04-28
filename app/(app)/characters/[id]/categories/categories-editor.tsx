@@ -349,6 +349,7 @@ export function CategoriesEditor(props: CategoriesEditorProps) {
                   <th className="px-3 py-2 font-medium">Category</th>
                   <th className="px-3 py-2 font-medium">Stat</th>
                   <th className="px-3 py-2 font-medium text-right">Cost/rank</th>
+                  <th className="px-3 py-2 font-medium text-right">DP Ranks</th>
                   <th className="px-3 py-2 font-medium text-right">Ranks</th>
                   <th className="px-3 py-2 font-medium text-right">Ranks val</th>
                   <th className="px-3 py-2 font-medium text-right">Stat val</th>
@@ -380,17 +381,7 @@ export function CategoriesEditor(props: CategoriesEditorProps) {
                   });
                   return (
                     <tr key={cat.id}>
-                      <td className="px-3 py-2 font-medium">
-                        {cat.name}
-                        {adolRanks > 0 && (
-                          <span
-                            title={`Free adolescent ranks from your birthplace`}
-                            className="ml-2 rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700"
-                          >
-                            +{adolRanks} adol
-                          </span>
-                        )}
-                      </td>
+                      <td className="px-3 py-2 font-medium">{cat.name}</td>
                       <td className="px-3 py-2 text-zinc-500">
                         {stat?.code ?? "—"}
                       </td>
@@ -402,9 +393,20 @@ export function CategoriesEditor(props: CategoriesEditorProps) {
                           className="justify-end"
                           value={playerRanks}
                           min={0}
-                          max={50}
+                          max={rankCap}
                           onCommit={(next) => commitCategoryRanks(cat, next)}
                         />
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums font-medium">
+                        <span>{ranks}</span>
+                        {adolRanks > 0 && (
+                          <span
+                            title={`${playerRanks} DP rank${playerRanks === 1 ? "" : "s"} + ${adolRanks} free adolescent rank${adolRanks === 1 ? "" : "s"} from birthplace`}
+                            className="ml-1 rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700"
+                          >
+                            +{adolRanks}
+                          </span>
+                        )}
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums">
                         {computed.ranks_value}

@@ -1,7 +1,13 @@
 import { notFound } from "next/navigation";
 
 import { loadCharacterAdolescentGrants } from "@/lib/data/character-adolescent-grants";
+import {
+  ensureWeaponPoolChoice,
+  loadPendingChoices,
+} from "@/lib/data/character-pending-choices";
 import { loadCharacterTalentBonuses } from "@/lib/data/character-talent-bonuses";
+import { aggregateCharacterDp } from "@/lib/domain/dp-budget";
+import type { LevelTier } from "@/lib/domain/progression";
 import { createClient } from "@/lib/supabase/server";
 
 import { WeaponsEditor } from "./weapons-editor";
@@ -71,6 +77,23 @@ export default async function WeaponsPage({
 
   if (!character) notFound();
 
+  const tiers: LevelTier[] = (levelProgression ?? []).map((t) => ({
+    level: t.level,
+    min_total_dp: t.min_total_dp,
+    max_total_dp: t.max_total_dp ?? Number.MAX_SAFE_INTEGER,
+  }));
+  const dpBudget = await aggregateCharacterDp(supabase, id, tiers, {
+    hasProfessionAdaptability: character.has_profession_adaptability,
+  });
+
+  // Materialize the persistent weapon-pool choice from the current
+  // birthplace (idempotent UPSERT). The editor reads `ranks_total` from
+  // this table — `ensure...` keeps it coherent if the player changed
+  // birthplace since their last visit.
+  await ensureWeaponPoolChoice(supabase, id);
+  const pendingChoices = await loadPendingChoices(supabase, id);
+  const weaponPool = pendingChoices.get("weapon_pool") ?? null;
+
   const raceId = description?.race_id ?? null;
   const birthplaceId = description?.birthplace_id ?? null;
 
@@ -114,8 +137,19 @@ export default async function WeaponsPage({
       talentStatBonuses={Array.from(talentBonuses.stat.entries())}
       talentWeaponBonuses={Array.from(talentBonuses.weapon.entries())}
       adolescentCategoryGrants={Array.from(adolescentGrants.category.entries())}
-      adolescentWeaponPoolRanks={adolescentGrants.weapon_pool_ranks}
+      adolescentWeaponPoolRanks={weaponPool?.ranks_total ?? 0}
       adolescentWeaponPoolBreakdown={adolescentGrants.weapon_pool_breakdown}
+      pendingWeaponPool={
+        weaponPool
+          ? { id: weaponPool.id, ranksTotal: weaponPool.ranks_total }
+          : null
+      }
+      dpBudget={{
+        totalEarned: dpBudget.totalEarned,
+        totalSpent: dpBudget.totalSpent,
+        thisBucketSpent: dpBudget.byBucket.weapons,
+        derivedLevel: dpBudget.derivedLevel,
+      }}
     />
   );
 }

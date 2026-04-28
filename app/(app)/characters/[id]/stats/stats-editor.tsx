@@ -749,7 +749,13 @@ function IdentityCard({
           <NullableSelect
             value={description.sex_id}
             options={raceSexes}
-            placeholder={raceSexes.length ? "Select sex" : "Pick a race first"}
+            placeholder={
+              !description.race_id
+                ? "Pick a race first"
+                : raceSexes.length
+                  ? "Select sex"
+                  : "No data"
+            }
             onChange={(id) => onUpdateDescription({ sex_id: id })}
           />
         </FieldEditor>
